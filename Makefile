@@ -58,7 +58,7 @@ BASEOBJS = superstl.o config.o syscalls.o
 COMMONOBJS = ptlsim.o mm.o ptlhwdef.o decode-core.o decode-fast.o decode-complex.o decode-x87.o decode-sse.o uopimpl.o seqcore.o $(BASEOBJS)
 
 OOOOBJS = branchpred.o dcache.o ooocore.o ooopipe.o oooexec.o
-RASPSIM_OBJFILES = $(COMMONOBJS) raspsim.o $(OOOOBJS)
+RASPSIM_OBJFILES = $(COMMONOBJS) raspsim.o addrspace.o $(OOOOBJS)
 
 COMMONINCLUDES = logic.h ptlhwdef.h decode.h seqexec.h dcache.h dcache-amd-k8.h config.h ptlsim.h superstl.h globals.h ptlsim-api.h mm.h syscalls.h stats.h
 OOOINCLUDES = branchpred.h ooocore.h ooocore-amd-k8.h
