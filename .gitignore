@@ -8,3 +8,5 @@ raspsim
 test.dat
 dumpcode.dat
 *.o
+venv
+*.so
