@@ -45,13 +45,6 @@ extern "C" void assert_fail(const char *__assertion, const char *__file, unsigne
   abort();
 }
 
-// This is where we end up after issuing opcode 0x0f37 (undocumented x86 PTL call opcode)
-void assist_ptlcall(Context& ctx) {
-  requested_switch_to_native = 1; // exit
-  ctx.commitarf[REG_rip] = ctx.commitarf[REG_nextrip];
-}
-
-
 // Saved and restored by asm code:
 FXSAVEStruct x87state;
 W16 saved_cs;
@@ -85,7 +78,7 @@ void Raspsim::propagate_x86_exception(byte exception, W32 errorcode, Waddr virta
 
   cerr << "End state:", endl;
   cerr << ctx, endl;
-  exit(1);
+  sys_exit(1);
 }
 
 #ifdef __x86_64__
@@ -176,7 +169,7 @@ bool handle_config_arg(Raspsim& sim, char* line, dynarray<Waddr>* dump_pages) {
       cerr << "Error: invalid mem prot ", toks[1], endl;
       return true;
     }
-    sim.mmap(addr, 0x1000, prot);
+    sim.mmap(addr, prot);
   } else if (toks[0][0] == 'W') { // write to mem W<addr> <hexbytes>, may not cross page boundaries
     if (toks.size() != 2) {
       cerr << "Error: option ", line, " has wrong number of arguments", endl;
@@ -188,7 +181,7 @@ bool handle_config_arg(Raspsim& sim, char* line, dynarray<Waddr>* dump_pages) {
       cerr << "Error: invalid value ", toks[0], endl;
       return true;
     }
-    W8* mapped = (W8*)sim.getMappedPage(addr);
+    byte* mapped = sim.getMappedPage(addr);
     if (!mapped) {
       cerr << "Error: page not mapped ", (void*) addr, endl;
       return true;
@@ -319,4 +312,3 @@ bool handle_config_arg(Raspsim& sim, char* line, dynarray<Waddr>* dump_pages) {
 
   sys_exit(0);
 }
-bool requested_switch_to_native = 0;

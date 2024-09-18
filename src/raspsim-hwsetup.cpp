@@ -1,5 +1,6 @@
 #include <raspsim-hwsetup.h>
 #include <addrspace.h>
+#include <ptlsim.h>
 
 struct PTLsimConfig;
 extern PTLsimConfig config;
@@ -7,7 +8,7 @@ extern PTLsimConfig config;
 static Context ctx alignto(4096) insection(".ctx"){};
 static AddressSpace asp{};
 
-// Raspsim class implementatio
+// Raspsim class implementation
 
 Raspsim::Raspsim() {
   config.reset();
@@ -37,6 +38,12 @@ Raspsim::Raspsim() {
   ctx.running = 1;
   ctx.commitarf[REG_ctx] = (Waddr)&ctx;
   ctx.commitarf[REG_fpstack] = (Waddr)&ctx.fpstack;
+
+  //
+  // Swap the FP control registers to the user process version, so FP uopimpls
+  // can use the real rounding control bits.
+  //
+  x86_set_mxcsr(ctx.mxcsr | MXCSR_EXCEPTION_DISABLE_MASK);
 }
 
 Raspsim::~Raspsim() {
@@ -52,7 +59,18 @@ Raspsim::~Raspsim() {
     total_basic_blocks_committed = 0;
 }
 
-Waddr Raspsim::getPageSize() const { return PAGE_SIZE; }
+PTLsimMachine* Raspsim::getMachine() {
+  return PTLsimMachine::getmachine(config.core_name);
+}
+
+const char* Raspsim::getCoreName() { return config.core_name; }
+
+void Raspsim::setLogfile(const char* filename) {
+  config.log_filename = filename;
+  backup_and_reopen_logfile();
+}
+
+Waddr Raspsim::getPageSize() { return PAGE_SIZE; }
 
 AddressSpace& Raspsim::getAddrspace() { return asp; }
 
@@ -60,7 +78,10 @@ Context& Raspsim::getContext() { return ctx; }
 
 W64 Raspsim::getRegisterValue(int reg) { return ctx.commitarf[reg]; }
 
-void Raspsim::mmap(Waddr start, Waddr length, int prot) { asp.map(start, length, prot); }
+byte* Raspsim::mmap(Waddr start, int prot) {
+  asp.map(start, getPageSize(), prot);
+  return (byte*)asp.page_virt_to_mapped(start);
+}
 
 void Raspsim::disableSSE() { ctx.no_sse = 1; }
 void Raspsim::disableX87() { ctx.no_x87 = 1; }
@@ -77,9 +98,13 @@ int Raspsim::getRegisterIndex(const char* regname) {
   return reg;
 }
 
-byte* Raspsim::getMappedPage(Waddr addr) { return (byte*) Raspsim::getAddrspace().page_virt_to_mapped(addr); }
+byte* Raspsim::getMappedPage(Waddr addr) {
+  assert(addr % PAGE_SIZE == 0);
+  return (byte*)Raspsim::getAddrspace().page_virt_to_mapped(addr);
+}
 
 W64 Raspsim::cycles() { return sim_cycle; }
+W64 Raspsim::instructions() { return total_user_insns_committed; }
 
 void Raspsim::setRegisterValue(int reg, W64 value) { ctx.commitarf[reg] = value; }
 
@@ -90,15 +115,12 @@ void Raspsim::stutdown() {
 }
 
 void Raspsim::run() {
-  //
-  // Swap the FP control registers to the user process version, so FP uopimpls
-  // can use the real rounding control bits.
-  //
-  x86_set_mxcsr(ctx.mxcsr | MXCSR_EXCEPTION_DISABLE_MASK);
-
   simulate(config.core_name);
 }
 
+const char* Raspsim::getExceptionName(byte exception) {
+  return x86_exception_names[exception];
+}
 
 // Begin Virtual Hardware Setup for RASPsim
 
@@ -317,4 +339,12 @@ void handle_syscall_64bit() {
 void handle_syscall_32bit(int semantics) {
   Raspsim::handle_syscall_32bit(semantics);
 }
+
+// This is where we end up after issuing opcode 0x0f37 (undocumented x86 PTL call opcode)
+void assist_ptlcall(Context& ctx) {
+  requested_switch_to_native = 1; // exit
+  ctx.commitarf[REG_rip] = ctx.commitarf[REG_nextrip];
+}
+
+bool requested_switch_to_native = 0;
 

@@ -395,6 +395,27 @@ PTLsimMachine* PTLsimMachine::getcurrent() {
   return current_machine;
 }
 
+
+void simulateInitializedMachine(PTLsimMachine& machine) {
+  W64 tsc_at_start = rdtsc();
+  current_machine = &machine;
+  machine.run(config);
+  W64 tsc_at_end = rdtsc();
+  machine.update_stats(stats);
+  current_machine = null;
+}
+
+bool ensureMachineInitialized(PTLsimMachine& m, const char* machinename) {
+  if (!m.initialized) {
+    logfile << "Initializing core '", machinename, "'", endl;
+    if (!m.init(config)) {
+      return 1;
+    }
+    m.initialized = 1;
+  }
+  return 0;
+}
+
 bool simulate(const char* machinename) {
   PTLsimMachine* machine = PTLsimMachine::getmachine(machinename);
 
@@ -404,13 +425,9 @@ bool simulate(const char* machinename) {
     return 0;
   }
 
-  if (!machine->initialized) {
-    logfile << "Initializing core '", machinename, "'", endl;
-    if (!machine->init(config)) {
-      logfile << "Cannot initialize core model; check its configuration!", endl;
-      return 0;
-    }
-    machine->initialized = 1;
+  if (ensureMachineInitialized(*machine, machinename)) {
+    logfile << "Cannot initialize core model; check its configuration!", endl;
+    return 0;
   }
 
   logfile << "Switching to simulation core '", machinename, "'...", endl, flush;
@@ -418,12 +435,7 @@ bool simulate(const char* machinename) {
   logfile << "Stopping after ", config.stop_at_user_insns, " commits", endl, flush;
   cerr << "Stopping after ", config.stop_at_user_insns, " commits", endl, flush;
 
-  W64 tsc_at_start = rdtsc();
-  current_machine = machine;
-  machine->run(config);
-  W64 tsc_at_end = rdtsc();
-  machine->update_stats(stats);
-  current_machine = null;
+  simulateInitializedMachine(*machine);
 
   stringbuf sb;
   sb << endl, "Stopped after ", sim_cycle, " cycles, ", total_user_insns_committed, " instructions", endl;

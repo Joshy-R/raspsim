@@ -5,6 +5,7 @@
 
 class AddressSpace;
 class Context;
+class PTLsimMachine;
 
 // Class for setting up user space simulation mode and common settup code for the simulator
 // Wrapper to static or global state for better binding support
@@ -17,6 +18,11 @@ public:
 
   void run();
 
+protected:
+  PTLsimMachine* getMachine();
+  const char* getCoreName();
+public:
+
   int getRegisterIndex(const char* regname);
   void setRegisterValue(int reg, W64 value);
   W64 getRegisterValue(int reg);
@@ -27,17 +33,20 @@ public:
   void disableX87();
   void enablePerfectCache();
   void enableStaticBranchPrediction();
+  void setLogfile(const char* filename);
 
-  void mmap(Waddr start, Waddr length, int prot);
+  byte* mmap(Waddr start, int prot);
 
-  W64 cycles();
+  static W64 cycles();
+  static W64 instructions();
 
-  Waddr getPageSize() const;
+  static Waddr getPageSize();
 
   static void stutdown();
   static AddressSpace& getAddrspace();
   static Context& getContext();
 
+  static const char* getExceptionName(byte exception);
 
   // Implement as desired depending on the bindings
   static void propagate_x86_exception(byte exception, W32 errorcode, Waddr virtaddr);
