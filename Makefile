@@ -79,10 +79,14 @@ ifdef __x86_64__
 raspsim: $(OBJS) src/raspsim.o Makefile
 	$(CXX) src/raspsim.o $(OBJS) -o $@ -Wl,--allow-multiple-definition -static
 
-pyraspsim: CFLAGS += -fPIC
-pyraspsim: $(OBJS) Makefile
+pyraspsim_bindings: CFLAGS += -fPIC
+pyraspsim_bindings: $(OBJS) Makefile
 	@python3 -c "import pybind11" || (echo "pybind11 is not installed. Please install it using 'pip3 install pybind11'"; exit 1)
 	$(CXX) $(INCFLAGS) -O3 -Wall -shared -std=c++11 -fPIC $(shell python3 -m pybind11 --includes) src/pyraspsim.cpp -o raspsim$(shell python3-config --extension-suffix) $(OBJS) -Wl,--allow-multiple-definition
+pyraspsim_stubs: raspsim$(shell python3-config --extension-suffix) Makefile
+	@which pybind11-stubgen > /dev/null 2>&1 || (echo "pybind11-stubgen us not installed. Please install it using 'pip install pybind11-stubgen'"; exit 1)
+	env PYTHONPATH=. pybind11-stubgen raspsim
+pyraspsim: pyraspsim_bindings pyraspsim_stubs
 endif
 
 src/%.o: src/%.cpp
