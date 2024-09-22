@@ -82,6 +82,7 @@ void AddressSpace::reset() {
   freemap(writemap);
   freemap(execmap);
   freemap(dirtymap);
+  mapped_mem.clear();
 
   readmap  = allocmap();
   writemap = allocmap();
