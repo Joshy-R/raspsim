@@ -369,6 +369,10 @@ PTLsimMachine dummymachine;
 
 bool PTLsimMachine::init(PTLsimConfig& config) { return false; }
 int PTLsimMachine::run(PTLsimConfig& config) { return 0; }
+void PTLsimMachine::reset() {
+  bbcache.reset();
+  initialized = 0;
+}
 void PTLsimMachine::update_stats(PTLsimStats& stats) { return; }
 void PTLsimMachine::dump_state(ostream& os) { return; }
 void PTLsimMachine::flush_tlb(Context& ctx) { return; }
