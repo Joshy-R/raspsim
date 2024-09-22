@@ -1658,6 +1658,7 @@ namespace OutOfOrderModel {
     OutOfOrderMachine(const char* name);
     virtual bool init(PTLsimConfig& config);
     virtual int run(PTLsimConfig& config);
+    virtual void reset();
     virtual void dump_state(ostream& os);
     virtual void update_stats(PTLsimStats& stats);
     virtual void flush_tlb(Context& ctx);

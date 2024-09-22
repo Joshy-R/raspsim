@@ -1790,6 +1790,14 @@ int OutOfOrderMachine::run(PTLsimConfig& config) {
   return exiting;
 }
 
+void OutOfOrderMachine::reset() {
+  PTLsimMachine::reset();
+  stopped.reset();
+  foreach (i, MAX_SMT_CORES) {
+    if (cores[i]) cores[i]->reset();
+  }
+}
+
 void OutOfOrderCore::flush_tlb(Context& ctx, int threadid, bool selective, Waddr virtaddr) {
   ThreadContext& thread =* threads[threadid];
   if (logable(5)) {
