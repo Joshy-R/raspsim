@@ -401,7 +401,12 @@ struct SegmentDescriptorCache {
   }
 };
 
-ostream& operator <<(ostream& os, const SegmentDescriptorCache& seg);
+stringbuf& operator <<(stringbuf& os, const SegmentDescriptorCache& seg);
+inline ostream& operator <<(ostream& os, const SegmentDescriptorCache& seg) {
+  stringbuf sb;
+  sb << seg;
+  return os << sb;
+}
 
 //
 // These are x86 exceptions, not PTLsim internal exceptions
@@ -841,7 +846,13 @@ struct Context: public ContextBase {
 #endif
 };
 
-ostream& operator <<(ostream& os, const Context& ctx);
+stringbuf& operator <<(stringbuf& os, const Context& ctx);
+
+static inline ostream& operator <<(ostream& os, const Context& ctx) {
+  stringbuf sb;
+  sb << ctx;
+  return os << sb;
+}
 
 // Other flags not defined above
 enum {

@@ -669,7 +669,7 @@ ostream& operator <<(ostream& os, const SegmentDescriptor& seg) {
   return os;
 }
 
-ostream& operator <<(ostream& os, const SegmentDescriptorCache& seg) {
+stringbuf& operator <<(stringbuf& os, const SegmentDescriptorCache& seg) {
   os << "0x", hexstring(seg.selector, 16), ": ";
 
   os << "base ", hexstring(seg.base, 64), ", limit ", hexstring(seg.limit, 64), ", ring ", seg.dpl, ":";
@@ -718,7 +718,7 @@ ostream& operator <<(ostream& os, const CR4& cr4) {
 }
 #endif
 
-ostream& operator <<(ostream& os, const Context& ctx) {
+stringbuf& operator <<(stringbuf& os, const Context& ctx) {
   static const int arfwidth = 4;
 
   os << "VCPU State:", endl;
