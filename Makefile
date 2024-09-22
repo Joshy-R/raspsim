@@ -35,7 +35,7 @@ SVNREV=0
 SVNDATE=unknown
 #endif
 
-INCFLAGS = -I. -DBUILDHOST="`hostname -f`" -DSVNREV="$(SVNREV)" -DSVNDATE="$(SVNDATE)"
+INCFLAGS = -Isrc -DBUILDHOST="`hostname -f`" -DSVNREV="$(SVNREV)" -DSVNDATE="$(SVNDATE)"
 
 ifdef __x86_64__
 CFLAGS = -std=gnu++11 -O2 -fomit-frame-pointer -pipe -march=k8 -fno-builtin-memmove -falign-functions=16 -funroll-loops -funit-at-a-time -minline-all-stringops
@@ -55,20 +55,21 @@ CFLAGS += -fno-trapping-math -fno-stack-protector -fno-exceptions -fno-rtti -fun
 
 
 BASEOBJS = superstl.o config.o syscalls.o
-COMMONOBJS = ptlsim.o mm.o ptlhwdef.o decode-core.o decode-fast.o decode-complex.o decode-x87.o decode-sse.o uopimpl.o seqcore.o $(BASEOBJS)
+COMMONOBJS = ptlsim.o mm.o ptlhwdef.o decode-core.o decode-fast.o decode-complex.o decode-x87.o decode-sse.o uopimpl.o seqcore.o
 
 OOOOBJS = branchpred.o dcache.o ooocore.o ooopipe.o oooexec.o
-RASPSIM_OBJFILES = $(COMMONOBJS) raspsim.o raspsim-hwsetup.o addrspace.o $(OOOOBJS)
+RASPSIMOBJS = raspsim-hwsetup.o addrspace.o
 
-COMMONINCLUDES = logic.h ptlhwdef.h decode.h seqexec.h dcache.h dcache-amd-k8.h config.h ptlsim.h superstl.h globals.h ptlsim-api.h mm.h syscalls.h stats.h
+COMMONINCLUDES = logic.h ptlhwdef.h decode.h seqexec.h dcache.h dcache-amd-k8.h config.h ptlsim.h superstl.h globals.h ptlsim-api.h mm.h syscalls.h stats.h typedefs.h registers.def
 OOOINCLUDES = branchpred.h ooocore.h ooocore-amd-k8.h
-INCLUDEFILES = $(COMMONINCLUDES) $(OOOINCLUDES)
 
 COMMONCPPFILES = ptlsim.cpp raspsim.cpp mm.cpp superstl.cpp ptlhwdef.cpp decode-core.cpp decode-fast.cpp decode-complex.cpp decode-x87.cpp decode-sse.cpp uopimpl.cpp dcache.cpp config.cpp syscalls.cpp
 
 OOOCPPFILES = ooocore.cpp ooopipe.cpp oooexec.cpp seqcore.cpp branchpred.cpp
 
-CPPFILES = $(COMMONCPPFILES) $(OOOCPPFILES)
+OBJS = $(addprefix src/, $(BASEOBJS) $(COMMONOBJS) $(OOOOBJS) $(RASPSIMOBJS))
+INCLUDEFILES = $(addprefix src/, $(COMMONINCLUDES) $(OOOINCLUDES))
+CPPFILES = $(addprefix src/, $(COMMONCPPFILES) $(OOOCPPFILES))
 
 CFLAGS += -D__PTLSIM_OOO_ONLY__
 
@@ -78,24 +79,24 @@ all: $(TOPLEVEL)
 	@echo "Compiled successfully..."
 
 ifdef __x86_64__
-raspsim: $(RASPSIM_OBJFILES) Makefile
-	$(CXX) $(RASPSIM_OBJFILES) -o $@ -Wl,--allow-multiple-definition -static
+raspsim: src/raspsim.o $(OBJS) Makefile
+	$(CXX) $< $(OBJS) -o $@ -Wl,--allow-multiple-definition -static
 endif
 
-%.o: %.cpp
-	$(CC) $(CFLAGS) $(INCFLAGS) -c $<
+src/%.o: src/%.cpp
+	$(CC) $(CFLAGS) $(INCFLAGS) -o $@ -c $<
 
-%.o: %.S
-	$(CC) $(CFLAGS) $(INCFLAGS) -c $<
+src/%.o: src/%.S
+	$(CC) $(CFLAGS) $(INCFLAGS) -o $@ -c $<
 
-%.o: %.c
-	$(CC) $(CFLAGS) $(INCFLAGS) -c $<
+src/%.o: src/%.c
+	$(CC) $(CFLAGS) $(INCFLAGS) -o $@ -c $<
 
 clean:
-	rm -fv raspsim *.o core core.[0-9]* .depend *.gch *.so
+	rm -fv raspsim src/*.o core core.[0-9]* .depend *.gch *.so *.log.*
 
-INCLUDEFILES = $(COMMONINCLUDES) $(PT2XINCLUDES) $(OOOINCLUDES)
-CPPFILES = $(COMMONCPPFILES) $(PT2XCPPFILES) $(OOOCPPFILES)
+INCLUDEFILES += $(PT2XINCLUDES)
+CPPFILES += $(PT2XCPPFILES)
 
 #
 # Miscellaneous:
@@ -116,3 +117,4 @@ distfiles: $(DISTFILES)
 
 -include .depend
 
+.PHONY: all clean dist distfiles backup pyraspsim(venv) 
