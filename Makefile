@@ -81,6 +81,19 @@ all: $(TOPLEVEL)
 ifdef __x86_64__
 raspsim: src/raspsim.o $(OBJS) Makefile
 	$(CXX) $< $(OBJS) -o $@ -Wl,--allow-multiple-definition -static
+
+PYRASPSIM = pyraspsim/raspsim/core$(shell python3-config --extension-suffix)
+
+$(PYRASPSIM): CFLAGS += -fPIC
+$(PYRASPSIM): pyraspsim/raspsim/pyraspsim.cpp $(OBJS) Makefile
+	@python3 -c "import pybind11" || (echo "pybind11 is not installed. Please install it using 'pip3 install pybind11'"; exit 1)
+	$(CXX) $(INCFLAGS) -O3 -Wall -shared -std=c++11 -fPIC $(shell python3 -m pybind11 --includes) $< -o $@ $(OBJS) -Wl,--allow-multiple-definition
+
+pyraspsim/raspsim/core.pyi: $(PYRASPSIM) Makefile
+	@which pybind11-stubgen > /dev/null 2>&1 || (echo "pybind11-stubgen us not installed. Please install it using 'pip install pybind11-stubgen'"; exit 1)
+	cd pyraspsim/raspsim && env PYTHONPATH=. pybind11-stubgen -o . core
+
+pyraspsim: $(PYRASPSIM) pyraspsim/raspsim/core.pyi
 endif
 
 src/%.o: src/%.cpp
@@ -93,7 +106,7 @@ src/%.o: src/%.c
 	$(CC) $(CFLAGS) $(INCFLAGS) -o $@ -c $<
 
 clean:
-	rm -fv raspsim src/*.o core core.[0-9]* .depend *.gch *.so *.log.*
+	rm -fvrd raspsim src/*.o core core.[0-9]* .depend *.gch *.so *.log.* pyraspsim/raspsim/*.so pyraspsim/raspsim/*.pyi pyraspsim/*.egg-info **/__pycache__  **/**/__pycache__
 
 INCLUDEFILES += $(PT2XINCLUDES)
 CPPFILES += $(PT2XCPPFILES)
