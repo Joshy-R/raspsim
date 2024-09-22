@@ -8,3 +8,10 @@ ptlstats
 test.dat
 dumpcode.dat
 *.o
+venv
+__pycache__
+*.so
+*.pyi
+*.egg-info
+pyraspsim/dist
+pyraspsim/build
