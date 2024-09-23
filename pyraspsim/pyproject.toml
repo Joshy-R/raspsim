@@ -1,6 +1,6 @@
 [project]
 name = "raspsim"
-version = "0.1.0.1"
+version = "0.1.0.7.1"
 authors = [
   { name="Janez Rotman", email="janez.rotman@tum.de" },
 ]
