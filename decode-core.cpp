@@ -455,6 +455,7 @@ void TraceDecoder::reset() {
   join_with_prev_insn = 0;
   outcome = DECODE_OUTCOME_OK;
   stop_at_rip = limits<W64>::max;
+  stop_at_user_insns =limits<W64>::max;
 }
 
 TraceDecoder::TraceDecoder(const RIPVirtPhys& rvp) {

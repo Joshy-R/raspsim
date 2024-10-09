@@ -190,6 +190,7 @@ struct TraceDecoder {
   bool no_partial_flag_updates_per_insn;
   bool fast_length_decode_only;
   W64 stop_at_rip;
+  W64 stop_at_user_insns;
 
   TraceDecoder(const RIPVirtPhys& rvp);
   TraceDecoder(Context& ctx, Waddr rip);
